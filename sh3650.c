@@ -25,7 +25,11 @@
 int cd_cmd(int argc, char **argv);
 int pwd_cmd(int argc, char **argv);
 int exit_cmd(int argc, char **argv);
+void execute_external_command(int argc, char **argv);
+void update_status(int exit_status);
+void replace_status(char **tokens, int n_tokens);
 
+int last_status = 0; // storing the last exit status so i can update the variable
 
 int main(int argc, char **argv)
 {
@@ -85,11 +89,11 @@ int main(int argc, char **argv)
 		status = pwd_cmd(n_tokens, tokens);
 	    } else if (strcmp(tokens[0], "exit") == 0) {
 		status = exit_cmd(n_tokens, tokens);
+	    } else if (strcmp(tokens[0], "echo") == 0) {
+		replace_status(tokens, n_tokens);
+		execute_external_command(n_tokens, tokens);
 	    } else {
-       		printf("line:");
-       		for (int i = 0; i < n_tokens; i++)
-            	    printf(" '%s'", tokens[i]);
-        	printf("\n");
+		execute_external_command(n_tokens, tokens);
 	    }
     	}
     }
@@ -150,3 +154,50 @@ int exit_cmd(int argc, char **argv) {
             exit(status);
         }
     }
+
+void execute_external_command(int argc, char **argv) {
+    pid_t pid = fork();
+
+    if (pid == -1) {
+	perror("fork");
+	exit(EXIT_FAILURE);
+    } else if (pid == 0) { // the child process
+	// re-enabling ctrl C
+	signal(SIGINT, SIG_DFL);
+
+	if (execvp(argv[0], argv) == -1) {
+	    fprintf(stderr, "%s: %s\n", argv[0], strerror(errno));
+	    exit(EXIT_FAILURE);
+	}
+    } else { // parent process
+	int status;
+	do {
+	    waitpid(pid, &status, WUNTRACED);
+	} while (!WIFEXITED(status) && !WIFSIGNALED(status));
+
+	if (WIFEXITED(status)) {
+	    int exit_status = WEXITSTATUS(status);
+	    update_status(exit_status);
+	} else {
+	    fprintf(stderr, "Child process terminated abnormally\n");
+	    update_status(EXIT_FAILURE);
+	}
+    }
+}
+
+
+void update_status(int exit_status) {
+    last_status = exit_status;
+}
+
+
+void replace_status(char **tokens, int n_tokens) {
+    char exit_status_str[16];
+    sprintf(exit_status_str, "%d", last_status);
+
+    for (int i = 0; i < n_tokens; i++) {
+	if (strcmp(tokens[i], "$") ==0) {
+	    tokens[i] = exit_status_str;
+	}
+    }
+}
