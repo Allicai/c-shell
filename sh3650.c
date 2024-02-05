@@ -196,7 +196,7 @@ void replace_status(char **tokens, int n_tokens) {
     sprintf(exit_status_str, "%d", last_status);
 
     for (int i = 0; i < n_tokens; i++) {
-	if (strcmp(tokens[i], "$") ==0) {
+	if (strcmp(tokens[i], "$?") ==0) {
 	    tokens[i] = exit_status_str;
 	}
     }
