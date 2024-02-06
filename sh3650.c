@@ -169,7 +169,7 @@ void exec_cmd(int argc, char **argv) {
 	int input_fd = STDIN_FILENO;
 	int output_fd = STDOUT_FILENO;
 	int i;
-	for (i = 0; i < argc, i++) {
+	for (i = 0; i < argc; i++) {
 	    if (strcmp(argv[i], "<") == 0) { // input redirection
 		input_fd = open(argv[i + 1], O_RDONLY); 
 		if (input_fd == -1) {
@@ -178,7 +178,7 @@ void exec_cmd(int argc, char **argv) {
 		}
 		argv[i] = NULL; // removes the < from argv
 		break;
-	    } else if (strcmp(argv[i], ">") == 0 { // output redirection
+	    } else if (strcmp(argv[i], ">") == 0) { // output redirection
 	        output_fd = open(argv[i + 1], O_CREAT | O_WRONLY | O_TRUNC, 0777);
 		// notes for self:
 		// file is created if it doesn't exist O_CREAT
