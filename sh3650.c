@@ -152,10 +152,10 @@ int exit_cmd(int argc, char **argv) {
 	}
 	
 	if (argc == 2) {
-	    exit(argv[1]);
+	    exit(**argv[1]);
 	}
 	
-        } else {
+        else {
             int status = atoi(argv[1]);
             exit(status);
         }
