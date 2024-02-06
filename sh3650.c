@@ -149,14 +149,7 @@ int exit_cmd(int argc, char **argv) {
 
         if (argc == 1) {
             exit(0);
-	}
-	
-	if (argc == 2) {
-	    printf("%c", *argv[1]);
-	    exit(*argv[1]);
-	}
-	
-        else {
+        } else {
             int status = atoi(argv[1]);
             exit(status);
         }
