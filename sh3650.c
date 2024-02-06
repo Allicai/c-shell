@@ -25,7 +25,7 @@
 int cd_cmd(int argc, char **argv);
 int pwd_cmd(int argc, char **argv);
 int exit_cmd(int argc, char **argv);
-void exec_cmd(int argc, char **argv);
+void execute_external_command(int argc, char **argv);
 void update_status(int exit_status);
 void replace_status(char **tokens, int n_tokens);
 
@@ -91,9 +91,9 @@ int main(int argc, char **argv)
 		status = exit_cmd(n_tokens, tokens);
 	    } else if (strcmp(tokens[0], "echo") == 0) {
 		replace_status(tokens, n_tokens);
-		exec_cmd(n_tokens, tokens);
+		execute_external_command(n_tokens, tokens);
 	    } else {
-		exec_cmd(n_tokens, tokens);
+		execute_external_command(n_tokens, tokens);
 	    }
     	}
     }
@@ -108,17 +108,17 @@ int main(int argc, char **argv)
 int cd_cmd(int argc, char **argv) {
         if (argc > 2) {
             fprintf(stderr, "cd: wrong number of arguments\n");
-            return 1; // exit status if i call cd 1 2, wrong no. of arguments
+            return 1;
         }
 
         const char *dir = (argc == 1) ? getenv("HOME") : argv[1];
 
         if (chdir(dir) == -1) {
            fprintf(stderr, "cd: %s\n", strerror(errno));
-           return 1; // exit status if i call cd /not-real, aka fake dir 
+           return 1;
         }
 
-        return 0; // a successful cd
+        return 0;
 
     }
 
@@ -155,14 +155,14 @@ int exit_cmd(int argc, char **argv) {
         }
     }
 
-void exec_cmd(int argc, char **argv) {
+void execute_external_command(int argc, char **argv) {
     pid_t pid = fork();
 
     if (pid == -1) {
 	perror("fork");
 	exit(EXIT_FAILURE);
     } else if (pid == 0) { // the child process
-	// re-enabling ctrl C according to part 1 instructions
+	// re-enabling ctrl C
 	signal(SIGINT, SIG_DFL);
 
 	if (execvp(argv[0], argv) == -1) {
@@ -171,7 +171,9 @@ void exec_cmd(int argc, char **argv) {
 	}
     } else { // parent process
 	int status;
-	waitpid(pid, &status, 0);
+	do {
+	    waitpid(pid, &status, WUNTRACED);
+	} while (!WIFEXITED(status) && !WIFSIGNALED(status));
 
 	if (WIFEXITED(status)) {
 	    int exit_status = WEXITSTATUS(status);
@@ -194,7 +196,7 @@ void replace_status(char **tokens, int n_tokens) {
     sprintf(exit_status_str, "%d", last_status);
 
     for (int i = 0; i < n_tokens; i++) {
-	if (strcmp(tokens[i], "$?") == 0) {
+	if (strcmp(tokens[i], "$?") ==0) {
 	    tokens[i] = exit_status_str;
 	}
     }
