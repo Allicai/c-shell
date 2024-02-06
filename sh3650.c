@@ -25,7 +25,7 @@
 int cd_cmd(int argc, char **argv);
 int pwd_cmd(int argc, char **argv);
 int exit_cmd(int argc, char **argv);
-void execute_external_command(int argc, char **argv);
+void exec_cmd(int argc, char **argv);
 void update_status(int exit_status);
 void replace_status(char **tokens, int n_tokens);
 
@@ -91,9 +91,9 @@ int main(int argc, char **argv)
 		status = exit_cmd(n_tokens, tokens);
 	    } else if (strcmp(tokens[0], "echo") == 0) {
 		replace_status(tokens, n_tokens);
-		execute_external_command(n_tokens, tokens);
+		exec_cmd(n_tokens, tokens);
 	    } else {
-		execute_external_command(n_tokens, tokens);
+		exec_cmd(n_tokens, tokens);
 	    }
     	}
     }
@@ -155,7 +155,7 @@ int exit_cmd(int argc, char **argv) {
         }
     }
 
-void execute_external_command(int argc, char **argv) {
+void exec_cmd(int argc, char **argv) {
     pid_t pid = fork();
 
     if (pid == -1) {
