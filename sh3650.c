@@ -165,6 +165,54 @@ void exec_cmd(int argc, char **argv) {
 	// re-enabling ctrl C according to part 1 instructions
 	signal(SIGINT, SIG_DFL);
 
+	// checking for redirection
+	int input_fd = STDIN_FILENO;
+	int output_fd = STDOUT_FILENO;
+	int i;
+	for (i = 0; i < argc, i++) {
+	    if (strcmp(argv[i], "<") == 0) { // input redirection
+		input_fd = open(argv[i + 1], O_RDONLY); 
+		if (input_fd == -1) {
+		    perror("open");
+		    exit(EXIT_FAILURE);
+		}
+		argv[i] = NULL; // removes the < from argv
+		break;
+	    } else if (strcmp(argv[i], ">") == 0 { // output redirection
+	        output_fd = open(argv[i + 1], O_CREAT | O_WRONLY | O_TRUNC, 0777);
+		// notes for self:
+		// file is created if it doesn't exist O_CREAT
+		// file is opened for writing if it does O_WRONLY
+		// if it has content it will be truncated first O_TRUNC
+		// 0777 is the permissions, readable, writable, and executable by everyone.
+		if (output_fd == -1) {
+		    perror("open");
+		    exit(EXIT_FAILURE);
+		}
+		argv[i] = NULL; // removes the > from argv
+		break;
+	    }
+	}
+
+	// redirect stdin
+	if (input_fd != STDIN_FILENO) {
+		if (dup2(input_fd, STDIN_FILENO) == -1) {
+		    perror("dup2");
+		    exit(EXIT_FAILURE);
+		}
+		close(input_fd); // close the descriptor
+	}
+
+	// same logic but for stdout
+	if (output_fd != STDOUT_FILENO) {
+            if (dup2(output_fd, STDOUT_FILENO) == -1) {
+                perror("dup2");
+                exit(EXIT_FAILURE);
+            }
+            close(output_fd); // Close unnecessary file descriptor
+        }
+
+	
 	if (execvp(argv[0], argv) == -1) {
 	    fprintf(stderr, "%s: %s\n", argv[0], strerror(errno));
 	    exit(EXIT_FAILURE);
