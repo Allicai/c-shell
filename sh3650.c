@@ -149,6 +149,12 @@ int exit_cmd(int argc, char **argv) {
 
         if (argc == 1) {
             exit(0);
+	}
+	
+	if (argc == 2) {
+	    exit(argv[1]);
+	}
+	
         } else {
             int status = atoi(argv[1]);
             exit(status);
