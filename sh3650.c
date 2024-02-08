@@ -33,6 +33,8 @@ int pwd_cmd(int argc, char **argv);
 int exit_cmd(int argc, char **argv);
 void exec_cmd(int argc, char **argv);
 
+int last_status = 0;
+
 // Used VSCode on the VM and used its formatting feature, sorry if spacing makes it annoying to read.
 
 int main(int argc, char **argv) {
@@ -152,8 +154,8 @@ int exit_cmd(int argc, char **argv)
         return 1; // doesn't exit, but returns 1, and the main function then sets the 
     }
 
-    if (argc == 1) {
-        exit(0);
+    if (argc == 1) { // had this as exit(0) before but that's not true
+        exit(last_status);
     } else {
         int status = atoi(argv[1]);
         exit(status);
@@ -226,10 +228,10 @@ void exec_cmd(int argc, char **argv) { // function looks big I promise it's a lo
         waitpid(pid, &status, 0);
 
         if (WIFEXITED(status)) {
-            status = WEXITSTATUS(status);
+            last_status = WEXITSTATUS(status);
         } else {
             fprintf(stderr, "Child process terminated abnormally\n");
-            status = EXIT_FAILURE;
+            last_status = EXIT_FAILURE;
         }
     }
 }
