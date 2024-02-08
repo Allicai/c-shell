@@ -113,46 +113,48 @@ int main(int argc, char **argv) {
 }
 
 int cd_cmd(int argc, char **argv) {
+    int status = 0; // initial status is 0
     if (argc > 2) {
         fprintf(stderr, "cd: wrong number of arguments\n");
-        return 1; // exit status if i call cd 1 2, wrong no. of arguments
+        status =  1; // exit status if i call cd 1 2, wrong no. of arguments
+    } else {
+        const char *dir = (argc == 1) ? getenv("HOME") : argv[1];
+
+        if (chdir(dir) == -1) {
+            fprintf(stderr, "cd: %s\n", strerror(errno));
+            status = 1; // exit status if i call cd /not-real, aka fake dir
+        }
     }
 
-    const char *dir = (argc == 1) ? getenv("HOME") : argv[1];
-
-    if (chdir(dir) == -1) {
-        fprintf(stderr, "cd: %s\n", strerror(errno));
-        return 1; // exit status if i call cd /not-real, aka fake dir
-    }
-
-    return 0; // a successful cd
+    return status; // a successful cd returns 0
 }
 
 int pwd_cmd(int argc, char **argv) {
+    int status = 0;
     if (argc > 2) {
         fprintf(stderr, "pwd: too many arguments\n");
-        return 1;
+        status = 1;
     }
 
     char cwd[1024];
     if (getcwd(cwd, sizeof(cwd)) == NULL) {
         perror("pwd");
-        return 1;
+        status = 1;
     }
 
     printf("%s\n", cwd);
-    return 0;
+    return status;
 }
 
 int exit_cmd(int argc, char **argv) {
-    if (argc > 2) {
+    if (argc > 2) { // 2 or more exit status args provided
         fprintf(stderr, "exit: too many arguments\n");
         return 1;
     }
 
-    if (argc == 1) {
+    if (argc == 1) { // if i run just exit, exit with status 0
         exit(0);
-    } else {
+    } else { // exit with the status provided, i.e. exit 5 exits with the status 5
         int status = atoi(argv[1]);
         exit(status);
     }
