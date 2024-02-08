@@ -153,7 +153,7 @@ int exit_cmd(int argc, char **argv)
 {
     if (argc > 2) {
         fprintf(stderr, "exit: too many arguments\n");
-        return 1;
+        return 1; // doesn't exit, but returns 1, and the main function then sets the 
     }
 
     if (argc == 1) {
