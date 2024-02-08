@@ -32,10 +32,6 @@ int cd_cmd(int argc, char **argv);
 int pwd_cmd(int argc, char **argv);
 int exit_cmd(int argc, char **argv);
 void exec_cmd(int argc, char **argv);
-void update_status(int exit_status);
-void replace_status(char **tokens, int n_tokens);
-
-int last_status = 0; // storing the last exit status so i can update the variable
 
 // Used VSCode on the VM and used its formatting feature, sorry if spacing makes it annoying to read.
 
@@ -101,8 +97,8 @@ int main(int argc, char **argv) {
                 status = exit_cmd(n_tokens, tokens);
             }
             else if (strcmp(tokens[0], "echo") == 0) {
-                replace_status(tokens, n_tokens);
                 exec_cmd(n_tokens, tokens);
+                status = 0;
             } else {
                 exec_cmd(n_tokens, tokens);
             }
@@ -230,26 +226,10 @@ void exec_cmd(int argc, char **argv) { // function looks big I promise it's a lo
         waitpid(pid, &status, 0);
 
         if (WIFEXITED(status)) {
-            int exit_status = WEXITSTATUS(status);
-            update_status(exit_status);
+            status = WEXITSTATUS(status);
         } else {
             fprintf(stderr, "Child process terminated abnormally\n");
-            update_status(EXIT_FAILURE);
-        }
-    }
-}
-
-void update_status(int exit_status) { // a direct replacement of the latest exit status
-    last_status = exit_status;
-}
-
-void replace_status(char **tokens, int n_tokens) {
-    char exit_status_str[16];
-    sprintf(exit_status_str, "%d", last_status);
-
-    for (int i = 0; i < n_tokens; i++) {
-        if (strcmp(tokens[i], "$?") == 0) {
-            tokens[i] = exit_status_str;
+            status = EXIT_FAILURE;
         }
     }
 }
