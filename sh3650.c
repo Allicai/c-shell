@@ -31,9 +31,9 @@ Lab 2
 int cd_cmd(int argc, char **argv);
 int pwd_cmd(int argc, char **argv);
 int exit_cmd(int argc, char **argv);
-void exec_cmd(int argc, char **argv);
+int exec_cmd(int argc, char **argv, int status);
 void update_status(int exit_status);
-void replace_status(char **tokens, int n_tokens);
+void replace_status(char **tokens, int n_tokens, int status);
 
 int last_status = 0; // storing the last exit status so i can update the variable
 
@@ -96,12 +96,9 @@ int main(int argc, char **argv) {
             }
             else if (strcmp(tokens[0], "exit") == 0) {
                 status = exit_cmd(n_tokens, tokens);
-            }
-            else if (strcmp(tokens[0], "echo") == 0) {
-                replace_status(tokens, n_tokens);
-                exec_cmd(n_tokens, tokens);
-            } else {
-                exec_cmd(n_tokens, tokens);
+            } 
+			else {
+                status = exec_cmd(n_tokens, tokens, status);
             }
         }
     }
@@ -160,8 +157,11 @@ int exit_cmd(int argc, char **argv) {
     }
 }
 
-void exec_cmd(int argc, char **argv) {
+int exec_cmd(int argc, char **argv, int status) {
     pid_t pid = fork();
+    int exit_status = 0;
+
+	replace_status(argv, argc, status);
 
     if (pid == -1) {
         perror("fork");
@@ -187,11 +187,6 @@ void exec_cmd(int argc, char **argv) {
             }
             else if (strcmp(argv[i], ">") == 0) { // output redirection
                 output_fd = open(argv[i + 1], O_CREAT | O_WRONLY | O_TRUNC, 0777);
-                // notes for self:
-                // file is created if it doesn't exist O_CREAT
-                // file is opened for writing if it does O_WRONLY
-                // if it has content it will be truncated first O_TRUNC
-                // 0777 is the permissions, readable, writable, and executable by everyone.
                 if (output_fd == -1) {
                     perror("open");
                     exit(EXIT_FAILURE);
@@ -229,7 +224,7 @@ void exec_cmd(int argc, char **argv) {
         waitpid(pid, &status, 0);
 
         if (WIFEXITED(status)) {
-            int exit_status = WEXITSTATUS(status);
+            exit_status = WEXITSTATUS(status);
             update_status(exit_status);
         }
         else {
@@ -237,19 +232,21 @@ void exec_cmd(int argc, char **argv) {
             update_status(EXIT_FAILURE);
         }
     }
+    return exit_status; // return the exit status
 }
 
 void update_status(int exit_status) {
     last_status = exit_status;
 }
 
-void replace_status(char **tokens, int n_tokens) {
+void replace_status(char **tokens, int n_tokens, int status) {
     char exit_status_str[16];
-    sprintf(exit_status_str, "%d", last_status);
+    sprintf(exit_status_str, "%d", status);
 
     for (int i = 0; i < n_tokens; i++) {
         if (strcmp(tokens[i], "$?") == 0) {
-            tokens[i] = exit_status_str;
+            // tokens[i] = exit_status_str;
+			strcpy(tokens[i], exit_status_str);
         }
     }
 }
